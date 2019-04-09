@@ -33,7 +33,7 @@ class Interface(object):
 
     def __init__(self, master, db):
         self.master = master
-        self.master.title("Mp3 player Shinux")
+        self.master.title("Mp3 player")
         self.master.geometry("900x600+500+200")
         self.master.configure(bg="#313131")
         self.master.attributes('-alpha', 0.9)
@@ -227,12 +227,9 @@ class Interface(object):
     def create_playlist(self, name):
         self.db["playlist_names"].append(name)  # saves the order of the playlists
         self.db["playlists"][name] = []  # contains the names of all the albums. !!rename to playlist_albums
-
-        if not self.playlist.find_all():
-            self.playlist.create_text(20, 20, text=name, anchor=W, fill="#dcdcdc")
-        else:
-            y = self.playlist.coords(self.playlist.find_closest(0, 9999))[2]
-            self.playlist.create_text(20, y, text=name)
+        self.playlist.insert("end", name)
+        self.playlist.itemconfig("end", foreground="#dcdcdc")
+        self.playlist.select_set(0)
 
     def add_files(self):
         if self.db["playlists"]:  # checks if playlists exist
