@@ -1,17 +1,14 @@
 from tkinter import Tk
 from Mp3_Interface import Interface
-import time
 import shelve
 
 
 if __name__ == "__main__":
-    t = time.time()
     root = Tk()
 
-    with shelve.open(r"shelve/locations", writeback=True) as sv:
+    with shelve.open(r"shelve/locations", writeback=True) as sv:  # opens files where all data will be saved
 
         start = Interface(root, sv)
-        print(time.time()-t)
 
         root.mainloop()
 

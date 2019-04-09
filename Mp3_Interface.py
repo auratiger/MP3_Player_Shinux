@@ -184,7 +184,7 @@ class Interface(object):
         except KeyError:
             pass
 
-# plays the songs
+# plays songs
     def playing_songs(self, song_path, song_index, current_album):
         mixer.init()
 
@@ -220,10 +220,12 @@ class Interface(object):
                 self.time_passing()
         self.play_next_song()
 
+    # initialises a PopUp window to ask for a name for the new playlist
     def create_playlist_window(self):
         root2 = Toplevel(self.master)
         name = NewPlaylist(root2, self)
 
+    # creates new playlist
     def create_playlist(self, name):
         self.db["playlist_names"].append(name)  # saves the order of the playlists
         self.db["playlists"][name] = []  # contains the names of all the albums. !!rename to playlist_albums
@@ -231,6 +233,7 @@ class Interface(object):
         self.playlist.itemconfig("end", foreground="#dcdcdc")
         self.playlist.select_set(0)
 
+    # adds music files to playlist
     def add_files(self):
         if self.db["playlists"]:  # checks if playlists exist
             active_playlist = self.playlist.get("active")
@@ -240,6 +243,7 @@ class Interface(object):
             except FileNotFoundError:
                 messagebox.showerror("Error", "Directory not found")  # add better except----------------
 
+    # iterates through all files and gets all songs_names and song_paths
     def iterate_files(self, path, active_playlist):
         import re
 
@@ -255,11 +259,13 @@ class Interface(object):
             for dir_path in dir_paths:
                 self.iterate_files(dir_path, active_playlist)
 
+    # displays existing playlists
     def display_playlist(self):
         for item in self.db["playlist_names"]:
             self.playlist.insert("end", item)
             self.playlist.itemconfig("end", foreground="#dcdcdc")
 
+    # displays all songs to interface
     def display_songs(self, playlist):
         self.songs.delete("all")
 
