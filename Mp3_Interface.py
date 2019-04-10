@@ -17,7 +17,7 @@ import time
 
 from Songs import Songs
 from Playlist import Playlist
-from NewPlaylist import NewPlaylist
+from NewPlaylist import GetPlaylistName
 
 # menu bar
 # color changing in menu bar
@@ -73,7 +73,7 @@ class Interface(object):
         self.bot_f = Frame(self.master, width=900, height=90, relief="raised", bg="#313131")
         self.bot_f.pack(fill=Y, side=BOTTOM)
 
-        #   --------------------   playlist   ---------------------------
+        #   --------------------   Playlist Container   ---------------------------
 
         self.file_frame = Frame(self.mid_f, bg="red", highlightbackground="red")
         self.file_frame.grid(column=0, row=0, sticky=W)
@@ -85,7 +85,7 @@ class Interface(object):
         self.s1.pack(side=RIGHT, fill=Y)
         self.playlist['yscrollcommand'] = self.s1.set
 
-        #   --------------------  songs  -----------------------------------
+        #   --------------------  Songs Container  -----------------------------------
         self.song_frame = Frame(self.mid_f, relief="sunken", bg="#3e4046")
         self.song_frame.grid(column=2, row=0, sticky=W)
 
@@ -95,9 +95,6 @@ class Interface(object):
         self.s2 = ttk.Scrollbar(self.song_frame, orient=VERTICAL, command=self.songs.yview, style="Vertical.TScrollbar")
         self.s2.pack(side=RIGHT, fill=Y)
         self.songs["yscrollcommand"] = self.s2.set
-
-        # Logo
-
 
         # PROGRESSBAR
         self.progress_var = StringVar()
@@ -119,36 +116,32 @@ class Interface(object):
         self.logo = Button(self.top_f, image=self.button_images["shinux.png"], bg="#313131",
                            activebackground="#313131", borderwidth=0)
         self.logo.place(relx=0.95, rely=0.5, anchor=CENTER)
-
-        self.back_btn = Button(self.bot_f, image=self.button_images["back_btn.png"],
-                               command=lambda: self.play_previous_song(),
-                               bg="#313131", borderwidth=0, activebackground="#313131")
+        #
+        self.back_btn = Button(self.bot_f, image=self.button_images["back_btn.png"], activebackground="#313131",
+                               command=lambda: self.play_previous_song(), bg="#313131", borderwidth=0)
         self.back_btn.place(relx=0.4, rely=0.5, anchor=CENTER)
-
-        self.play_btn = Button(self.bot_f, image=self.button_images["play_btn.png"]
-                               , command=lambda: self.pause_unpause_button(),
-                               bg="#313131", borderwidth=0, activebackground="#313131")
+        #
+        self.play_btn = Button(self.bot_f, image=self.button_images["play_btn.png"], activebackground="#313131",
+                               command=lambda: self.pause_unpause_button(), bg="#313131", bd=0)
         self.play_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
-
+        #
         self.next_btn = Button(self.bot_f, image=self.button_images["forward_btn.png"],
-                               command=lambda: self.play_next_song(),
-                               bg="#313131", borderwidth=0, activebackground="#313131")
+                               command=lambda: self.play_next_song(), bg="#313131", bd=0, activebackground="#313131")
         self.next_btn.place(relx=0.6, rely=0.5, anchor=CENTER)
-
+        #
         self.add_btn = Button(self.column_frame, image=self.button_images["folder_btn.png"],
                               command=lambda: self.create_playlist_window())
         self.add_btn.place(relx=0.5, rely=0.2, anchor=CENTER)
-
+        #
         self.add_files_btn = Button(self.column_frame, image=self.button_images["plus_btn.png"],
                                     command=lambda: self.add_files())
         self.add_files_btn.place(relx=0.5, rely=0.4, anchor=CENTER)
-
+        #
         self.edit_btn = Button(self.column_frame, image=self.button_images["edit_btn.png"],
-                               command=lambda: self.add_files())
+                               command=lambda: self.edit_name_window())
         self.edit_btn.place(relx=0.5, rely=0.6, anchor=CENTER)
-
-        self.save_btn = Button(self.column_frame, image=self.button_images["save_btn.png"],
-                               command=lambda: self.save())
+        #
+        self.save_btn = Button(self.column_frame, image=self.button_images["save_btn.png"], command=lambda: self.save())
         self.save_btn.place(relx=0.5, rely=0.8, anchor=CENTER)
 
         # Music Time
@@ -216,7 +209,7 @@ class Interface(object):
         try:
             mixer.music.load(song_path)
         except KeyError:  # add some kind of exception -----------------------------
-            print("mixer error")
+            pass
 
         mixer.music.play()
         mixer.music.set_volume(self.db["volume_pct"] / 100)
@@ -237,17 +230,37 @@ class Interface(object):
 
     # initialises a PopUp window to ask for a name for the new playlist
     def create_playlist_window(self):
-        root2 = Toplevel(self.master)
-        name = NewPlaylist(root2, self)
+        root = Toplevel(self.master)
+        name = GetPlaylistName(root, self, "CREATE")
+
+    def edit_name_window(self):
+        root = Toplevel(self.master)
+        name = GetPlaylistName(root, self, "EDIT")
 
     # creates new playlist
     def create_playlist(self, name):
         self.db["playlist_names"].append(name)  # saves the order of the playlists
-        self.db["playlists"][name] = []  # contains the names of all the albums. !!rename to playlist_albums
+        self.db["playlists"][name] = []  # contains the names of all the albums.
         self.playlist.insert("end", name)
         self.playlist.itemconfig("end", foreground="#dcdcdc")
         self.playlist.select_clear(0, "end")
-        self.playlist.select_set("end")
+
+    def edit_name(self, old_name, new_name):
+        old_name_index = self.db["playlist_names"].index(old_name)
+        self.db["playlist_names"][old_name_index] = new_name
+        print(self.db["playlist_names"])
+
+        new = self.db["playlists"][old_name]
+        self.db["playlists"][new_name] = new
+        try:
+            del self.db["playlists"][old_name]
+        except SyntaxError:
+            pass
+
+        self.db.sync()
+
+        self.playlist.delete(0, "end")
+        self.display_playlist()
 
     # adds music files to playlist
     def add_files(self):
@@ -256,6 +269,7 @@ class Interface(object):
             try:
                 directory_path = filedialog.askdirectory()
                 self.iterate_files(directory_path, active_playlist)
+                self.display_songs(active_playlist)
             except FileNotFoundError:
                 messagebox.showerror("Error", "Directory not found")  # add better except----------------
 

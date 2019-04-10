@@ -11,7 +11,7 @@ class Playlist(Listbox):
 
         self.configure(bg="#191919", width=25, height=21, highlightbackground="#e85400", borderwidth=0, font=self.font)
 
-        self.bind("<Double-Button-1>", self.file_open)
+        self.bind("<Button-1>", self.file_open)
 
         self.controller = controller
         self.cur_index = None
