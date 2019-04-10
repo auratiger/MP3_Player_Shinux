@@ -143,6 +143,10 @@ class Interface(object):
         #
         self.save_btn = Button(self.column_frame, image=self.button_images["save_btn.png"], command=lambda: self.save())
         self.save_btn.place(relx=0.5, rely=0.8, anchor=CENTER)
+        #
+        self.remove_btn = Button(self.column_frame, command=lambda: self.remove_playlist())
+        self.remove_btn.place(relx=0.5, rely=0.9, anchor=CENTER)
+
 
         # Music Time
         self.music_time_var = StringVar()
@@ -248,7 +252,6 @@ class Interface(object):
     def edit_name(self, old_name, new_name):
         old_name_index = self.db["playlist_names"].index(old_name)
         self.db["playlist_names"][old_name_index] = new_name
-        print(self.db["playlist_names"])
 
         new = self.db["playlists"][old_name]
         self.db["playlists"][new_name] = new
@@ -261,6 +264,20 @@ class Interface(object):
 
         self.playlist.delete(0, "end")
         self.display_playlist()
+
+    def remove_playlist(self):
+        selected_playlist = self.playlist.get("active")
+        index = self.db["playlist_names"].index(selected_playlist)
+
+        print(selected_playlist)
+        if messagebox.askyesno("Remove playlist", "Are you sure you want to delete this playlist"):
+            self.db["playlist_names"].pop(index)
+            del self.db["playlists"][selected_playlist]
+
+            self.db.sync()
+
+            self.playlist.delete(0, "end")
+            self.display_playlist()
 
     # adds music files to playlist
     def add_files(self):
