@@ -2,8 +2,6 @@ from tkinter import Button, StringVar, Frame, Label, \
                     ttk, messagebox, filedialog, PhotoImage, \
                     CENTER, W, E, LEFT, RIGHT, BOTTOM, TOP, VERTICAL, HORIZONTAL, X, Y, BOTH, Toplevel
 
-import shelve
-
 from os import listdir
 from os.path import join, isdir
 
@@ -22,27 +20,27 @@ from Playlist import Playlist
 from NewPlaylist import NewPlaylist
 
 # menu bar
-# changing dir button
 # color changing in menu bar
-# playlist
 # search entrybox
 # fix threads
+# rename playlists
+# save changes
 
 
 class Interface(object):
 
     def __init__(self, master, db):
         self.master = master
-        self.master.title("Mp3 player")
+        self.master.title("Mp3 player Shinux")
         self.master.geometry("900x600+500+200")
         self.master.configure(bg="#313131")
         self.master.attributes('-alpha', 0.9)
         self.master.protocol("WM_DELETE_WINDOW", self.close)
 
-        self.button_images = [PhotoImage(file="pics\\back_btn.png"),
-                              PhotoImage(file="pics\play_btn.png"),
-                              PhotoImage(file="pics\\forward_btn.png"),
-                              PhotoImage(file="images\Asset_31x.png")]
+        self.button_images = {}
+
+        for image in listdir("images\\"):
+            self.button_images[image] = (PhotoImage(file=join("images\\", image)))
 
         self.db = db
 
@@ -99,9 +97,7 @@ class Interface(object):
         self.songs["yscrollcommand"] = self.s2.set
 
         # Logo
-        self.logo = Button(self.top_f, image=self.button_images[3], bg="#313131",
-                           activebackground="#313131", borderwidth=0)
-        self.logo.place(relx=0.95, rely=0.5, anchor=CENTER)
+
 
         # PROGRESSBAR
         self.progress_var = StringVar()
@@ -109,7 +105,7 @@ class Interface(object):
                                            , variable=self.progress_var, mode="determinate")
         self.progressbar.place(relx=0.5, rely=0.1, anchor=CENTER)
 
-        self.column_frame = Frame(self.mid_f, height=448, width=42, relief="sunken", bg="#e85400", borderwidth=5)
+        self.column_frame = Frame(self.mid_f, height=448, width=54, relief="sunken", bg="#e85400", borderwidth=5)
         self.column_frame.grid(column=1, row=0, sticky=W)
 
         # SCALE
@@ -118,30 +114,48 @@ class Interface(object):
                                , command=self.volume_adjuster, style="Horizontal.TScale")
         self.scale.place(relx=0.9, rely=0.5, anchor=CENTER)
 
-        #  MUSIC BUTTONS
-        self.back_btn = Button(self.bot_f, image=self.button_images[0], command=lambda: self.play_previous_song(),
+        # BUTTONS
+
+        self.logo = Button(self.top_f, image=self.button_images["shinux.png"], bg="#313131",
+                           activebackground="#313131", borderwidth=0)
+        self.logo.place(relx=0.95, rely=0.5, anchor=CENTER)
+
+        self.back_btn = Button(self.bot_f, image=self.button_images["back_btn.png"],
+                               command=lambda: self.play_previous_song(),
                                bg="#313131", borderwidth=0, activebackground="#313131")
         self.back_btn.place(relx=0.4, rely=0.5, anchor=CENTER)
 
-        self.play_btn = Button(self.bot_f, image=self.button_images[1], command=lambda: self.pause_unpause_button(),
+        self.play_btn = Button(self.bot_f, image=self.button_images["play_btn.png"]
+                               , command=lambda: self.pause_unpause_button(),
                                bg="#313131", borderwidth=0, activebackground="#313131")
         self.play_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
 
-        self.next_btn = Button(self.bot_f, image=self.button_images[2], command=lambda: self.play_next_song(),
+        self.next_btn = Button(self.bot_f, image=self.button_images["forward_btn.png"],
+                               command=lambda: self.play_next_song(),
                                bg="#313131", borderwidth=0, activebackground="#313131")
         self.next_btn.place(relx=0.6, rely=0.5, anchor=CENTER)
 
-        self.add_btn = Button(self.column_frame, command=lambda: self.create_playlist_window())
+        self.add_btn = Button(self.column_frame, image=self.button_images["folder_btn.png"],
+                              command=lambda: self.create_playlist_window())
         self.add_btn.place(relx=0.5, rely=0.2, anchor=CENTER)
 
-        self.add_files_btn = Button(self.column_frame, command=lambda: self.add_files())
-        self.add_files_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
+        self.add_files_btn = Button(self.column_frame, image=self.button_images["plus_btn.png"],
+                                    command=lambda: self.add_files())
+        self.add_files_btn.place(relx=0.5, rely=0.4, anchor=CENTER)
 
-        # MUSIC TIME BUTTON
+        self.edit_btn = Button(self.column_frame, image=self.button_images["edit_btn.png"],
+                               command=lambda: self.add_files())
+        self.edit_btn.place(relx=0.5, rely=0.6, anchor=CENTER)
+
+        self.save_btn = Button(self.column_frame, image=self.button_images["save_btn.png"],
+                               command=lambda: self.save())
+        self.save_btn.place(relx=0.5, rely=0.8, anchor=CENTER)
+
+        # Music Time
         self.music_time_var = StringVar()
         self.music_time_var.set("00:00")
-        self.music_time = ttk.Label(self.bot_f, width=5, textvariable=self.music_time_var, background="#313131",
-                                    foreground="red")
+        self.music_time = ttk.Label(self.bot_f, width=5, textvariable=self.music_time_var,
+                                    background="#313131", foreground="#e85400")
         self.music_time.config(font=("Courier", 20))
         self.music_time.place(relx=0.12, rely=0.5, anchor=CENTER)
 
@@ -154,10 +168,12 @@ class Interface(object):
                 mixer.music.pause()
                 self.paused = True
                 self.progressbar.stop()
+                self.play_btn.configure(image=self.button_images["pause_btn.png"])
             else:
                 mixer.music.unpause()
                 self.paused = False
                 self.progressbar.start(1000)
+                self.play_btn.configure(image=self.button_images["play_btn.png"])
         except error:
             pass
 
@@ -180,7 +196,6 @@ class Interface(object):
                                  args=[song_path, self.current_song_index, self.current_song_album])
             t.daemon = True
             t.start()
-
         except KeyError:
             pass
 
@@ -201,7 +216,7 @@ class Interface(object):
         try:
             mixer.music.load(song_path)
         except KeyError:  # add some kind of exception -----------------------------
-            pass
+            print("mixer error")
 
         mixer.music.play()
         mixer.music.set_volume(self.db["volume_pct"] / 100)
@@ -231,7 +246,8 @@ class Interface(object):
         self.db["playlists"][name] = []  # contains the names of all the albums. !!rename to playlist_albums
         self.playlist.insert("end", name)
         self.playlist.itemconfig("end", foreground="#dcdcdc")
-        self.playlist.select_set(0)
+        self.playlist.select_clear(0, "end")
+        self.playlist.select_set("end")
 
     # adds music files to playlist
     def add_files(self):
@@ -303,6 +319,10 @@ class Interface(object):
         self.music_time_passed += self.time_difference
         str_var = str(self.music_time_passed)
         self.music_time_var.set(str_var[2:])
+
+    def save(self):
+        self.db.sync()
+        messagebox.showinfo("saved", "Save successful")
 
 # stops the songs when closing
     def close(self):
