@@ -131,22 +131,22 @@ class Interface(object):
         #
         self.add_btn = Button(self.column_frame, image=self.button_images["folder_btn.png"],
                               command=lambda: self.create_playlist_window())
-        self.add_btn.place(relx=0.5, rely=0.2, anchor=CENTER)
+        self.add_btn.place(relx=0.5, rely=0.1, anchor=CENTER)
         #
         self.add_files_btn = Button(self.column_frame, image=self.button_images["plus_btn.png"],
                                     command=lambda: self.add_files())
-        self.add_files_btn.place(relx=0.5, rely=0.4, anchor=CENTER)
+        self.add_files_btn.place(relx=0.5, rely=0.3, anchor=CENTER)
         #
         self.edit_btn = Button(self.column_frame, image=self.button_images["edit_btn.png"],
                                command=lambda: self.edit_name_window())
-        self.edit_btn.place(relx=0.5, rely=0.6, anchor=CENTER)
+        self.edit_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
         #
         self.save_btn = Button(self.column_frame, image=self.button_images["save_btn.png"], command=lambda: self.save())
-        self.save_btn.place(relx=0.5, rely=0.8, anchor=CENTER)
+        self.save_btn.place(relx=0.5, rely=0.7, anchor=CENTER)
         #
-        self.remove_btn = Button(self.column_frame, command=lambda: self.remove_playlist())
+        self.remove_btn = Button(self.column_frame, image=self.button_images["remove_btn.png"],
+                                 command=lambda: self.remove_playlist())
         self.remove_btn.place(relx=0.5, rely=0.9, anchor=CENTER)
-
 
         # Music Time
         self.music_time_var = StringVar()
