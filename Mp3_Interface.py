@@ -36,6 +36,7 @@ class Interface(object):
         self.master.configure(bg="#313131")
         self.master.attributes('-alpha', 0.9)
         self.master.protocol("WM_DELETE_WINDOW", self.close)
+        self.master.bind("<space>", self.pause_unpause_button)
 
         self.button_images = {}
 
@@ -159,7 +160,7 @@ class Interface(object):
         self.display_playlist()
 
     # pauses or unpause songs
-    def pause_unpause_button(self):
+    def pause_unpause_button(self, event):
         try:
             if not self.paused:
                 mixer.music.pause()

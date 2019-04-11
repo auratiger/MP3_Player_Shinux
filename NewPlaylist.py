@@ -9,6 +9,8 @@ class GetPlaylistName(object):
         self.master.configure(background="#313131")
         self.master.minsize(width=260, height=100)
         self.master.maxsize(width=260, height=100)
+        self.master.focus_set()
+
         self.controller = controller
 
         self.label = Label(self.master, text="Enter name", bg="#313131", fg="#e88b56")
@@ -29,23 +31,24 @@ class GetPlaylistName(object):
         if order_call == "CREATE":
             self.master.title("New Playlist")
             self.call_btn.configure(command=self.create_new_playlist)
+            self.master.bind("<Return>", self.create_new_playlist)
         elif order_call == "EDIT":
             self.master.title("Edit Name")
             self.call_btn.configure(command=self.edit_playlist_name)
+            self.master.bind("<Return>", self.edit_playlist_name)
             self.old_name = self.controller.playlist.get("active")
-            print(self.old_name)
 
     def focus_in(self, event=0):
         self.entry.delete(0, "end")
         self.entry.configure(foreground="black")
 
-    def create_new_playlist(self):
+    def create_new_playlist(self, event=None):
         if not self.new_name.get():
             self.new_name.set("playlist")
         self.controller.create_playlist(self.new_name.get())
         self.cancel()
 
-    def edit_playlist_name(self):
+    def edit_playlist_name(self, event=None):
         if not self.new_name.get():
             self.new_name.set("playlist")
         self.controller.edit_name(self.old_name, self.new_name.get())
