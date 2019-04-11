@@ -31,7 +31,7 @@ class Interface(object):
 
     def __init__(self, master, db):
         self.master = master
-        self.master.title("Mp3 player Shinux")
+        self.master.title("Mp3 player Shinix")
         self.master.geometry("900x600+500+200")
         self.master.configure(bg="#313131")
         self.master.attributes('-alpha', 0.9)
