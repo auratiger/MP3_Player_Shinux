@@ -131,7 +131,7 @@ class Interface(object):
                                command=lambda: self.play_previous_song(), bg="#313131", borderwidth=0)
         self.back_btn.place(relx=0.4, rely=0.5, anchor=CENTER)
         #
-        self.play_btn = Button(self.bot_f, image=self.button_images["play_btn.png"], activebackground="#313131",
+        self.play_btn = Button(self.bot_f, image=self.button_images["pause_btn.png"], activebackground="#313131",
                                command=lambda: self.pause_unpause_button(), bg="#313131", bd=0)
         self.play_btn.place(relx=0.5, rely=0.5, anchor=CENTER)
         #
@@ -168,6 +168,53 @@ class Interface(object):
 
         self.display_playlist()
 
+    # initialises a second thread aside from the tkinter mainloop, which is going to play all music files
+    def initialise_thread(self, song_path, song_index, current_album):
+        if threading.active_count() < 2:
+            t = threading.Thread(target=self.music_loop, args=[song_path, song_index, current_album])
+            t.daemon = True
+            t.start()
+        else:
+            self.play_song(song_path)
+
+    # here the mixer object get's initialised the this function keeps the thread alive
+    def music_loop(self, song_path, song_index, current_album):
+        mixer.init()
+
+        self.current_song_index = int(song_index)
+        self.current_song_album = current_album
+
+        self.play_song(song_path)
+
+        while mixer.music.get_busy():
+            if not self.paused:
+                time.sleep(0.1)
+                self.time_passing()
+
+    # this function changes loads the songs which get played in the music loop
+    def play_song(self, song_path):
+        try:
+            mixer.music.load(song_path)
+            mixer.music.play()
+            mixer.music.set_volume(self.db["volume_value"] / 100)
+
+            self.display_configurations_reset(song_path)
+        except error:
+            messagebox.showerror("Song not found", "Song doesn't exist")
+
+    # updates the progress bar to the length of the new playing song and resets it to 0 and resets song_time label
+    def display_configurations_reset(self, song_path):
+        audio = MP3(song_path)
+        song_duration = round(float(audio.info.length))
+        self.progressbar.configure(maximum=song_duration)
+
+        self.progressbar.stop()
+        self.progress_var.set(0)
+        self.progressbar.start(1000)
+
+        self.music_time_var.set("00:00")
+        self.music_time_passed = datetime.timedelta()
+
     # pauses or unpause songs
     def pause_unpause_button(self, event=None):
         try:
@@ -175,12 +222,12 @@ class Interface(object):
                 mixer.music.pause()
                 self.paused = True
                 self.progressbar.stop()
-                self.play_btn.configure(image=self.button_images["pause_btn.png"])
+                self.play_btn.configure(image=self.button_images["play_btn.png"])
             else:
                 mixer.music.unpause()
                 self.paused = False
                 self.progressbar.start(1000)
-                self.play_btn.configure(image=self.button_images["play_btn.png"])
+                self.play_btn.configure(image=self.button_images["pause_btn.png"])
         except error:
             pass
 
@@ -188,10 +235,7 @@ class Interface(object):
         try:
             self.current_song_index += 1
             song_path = self.db["album_songs"][self.current_song_album][self.current_song_index][2]
-            t = threading.Thread(target=self.playing_songs,
-                                 args=[song_path, self.current_song_index, self.current_song_album])
-            t.daemon = True
-            t.start()
+            self.play_song(song_path)
         except KeyError:
             pass
 
@@ -199,55 +243,19 @@ class Interface(object):
         self.current_song_index -= 1
         try:
             song_path = self.db["album_songs"][self.current_song_album][self.current_song_index][2]
-            t = threading.Thread(target=self.playing_songs,
-                                 args=[song_path, self.current_song_index, self.current_song_album])
-            t.daemon = True
-            t.start()
+            self.play_song(song_path)
         except KeyError:
             pass
-
-# plays songs
-    def playing_songs(self, song_path, song_index, current_album):
-        mixer.init()
-
-        if mixer.music.get_busy():  # if a thread is already working this will stop it so it can start again
-            mixer.music.stop()
-            self.progressbar.stop()
-            self.music_time_passed = datetime.timedelta()
-
-        self.current_song_index = int(song_index)
-        self.current_song_album = current_album
-        self.progress_var.set(0)
-        self.music_time_var.set("00:00")
-
-        try:
-            mixer.music.load(song_path)
-        except KeyError:  # add some kind of exception -----------------------------
-            pass
-
-        mixer.music.play()
-        mixer.music.set_volume(self.db["volume_value"] / 100)
-
-        audio = MP3(song_path)
-        song_duration = round(float(audio.info.length))
-        self.progressbar.configure(maximum=song_duration)
-
-        self.progressbar.start(1000)
-
-        while mixer.music.get_busy():
-            if not self.paused:
-                self.time_passing()
-        self.play_next_song()
 
     # initialises a PopUp window to ask for a name for the new playlist
     def create_playlist_window(self):
         root = Toplevel(self.master)
-        name = GetPlaylistName(root, self, "CREATE")
+        GetPlaylistName(root, self, "CREATE")
 
     # initialises a PopUp window to ask the user for name to edit existing playlist
     def edit_name_window(self):
         root = Toplevel(self.master)
-        name = GetPlaylistName(root, self, "EDIT")
+        GetPlaylistName(root, self, "EDIT")
 
     # creates new playlist
     def create_playlist(self, name):
@@ -335,7 +343,7 @@ class Interface(object):
                                        font=("", 10))
                 self.songs.create_text(x + 450, y, text=song[1], tags=[song[2], index], anchor=W, fill="#dcdcdc",
                                        font=("", 10))
-                self.songs.create_line(x, y + 15, x + 500, y + 15, tags="line", fill="#dcdcdc")
+                self.songs.create_line(x, y + 15, x + 500, y + 15, tags=["line", index], fill="#dcdcdc")
 
         self.songs.configure(scrollregion=(0, 0, 0, y + 30))
 

@@ -20,11 +20,11 @@ class Songs(Canvas):
     def find_song(self, event):
         import re
 
-        curIndex = self.find_closest(self.canvasx(event.x), self.canvasy(event.y))
-        song_path, song_index = self.gettags(curIndex)[:2]
-        current_album = re.split("[\\\\/]", song_path)[-2]
+        cur_index = self.find_closest(self.canvasx(event.x), self.canvasy(event.y))
+        song_path, song_index = self.gettags(cur_index)[:2]
 
         if song_path != "line":
+            current_album = re.split("[\\\\/]", song_path)[-2]
             if self.selected_items:
                 for items in self.selected_items:
                     self.itemconfig(items, fill="#dcdcdc")
@@ -33,11 +33,8 @@ class Songs(Canvas):
             for item in self.find_withtag(song_path):
                 self.selected_items.append(item)
                 self.itemconfig(item, fill="#e88b56")
-            # t = Process(target=self.controller.playing_songs, args=(song_path,))
-            # t.start()
-            t = threading.Thread(target=self.controller.playing_songs, args=[song_path, song_index, current_album])
-            t.daemon = True
-            t.start()
+
+            self.controller.initialise_thread(song_path, song_index, current_album)
 
     def _on_mousewheel(self, event):
         self.yview_scroll(int(-1 * (event.delta / 120)), "units")
