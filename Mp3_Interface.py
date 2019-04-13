@@ -1,6 +1,13 @@
-from tkinter import Button, StringVar, Frame, Label, \
-                    ttk, messagebox, filedialog, PhotoImage, \
-                    CENTER, W, E, LEFT, RIGHT, BOTTOM, TOP, VERTICAL, HORIZONTAL, X, Y, BOTH, Toplevel
+try:
+    # for python 3
+    from tkinter import Button, StringVar, Frame, Toplevel, TclError,\
+                        ttk, messagebox, filedialog, PhotoImage, \
+                        CENTER, W, LEFT, RIGHT, BOTTOM, VERTICAL, HORIZONTAL, Y
+except ImportError:
+    # for python 2
+    from Tkinter import Button, StringVar, Frame, Toplevel, TclError,\
+                        ttk, messagebox, filedialog, PhotoImage, \
+                        CENTER, W, LEFT, RIGHT, BOTTOM, VERTICAL, HORIZONTAL, Y
 
 from os import listdir
 from os.path import join, isdir
@@ -31,7 +38,7 @@ class Interface(object):
 
     def __init__(self, master, db):
         self.master = master
-        self.master.title("Mp3 player Shinix")
+        self.master.title("Mp3 player Shinux")
         self.master.geometry("900x600+500+200")
         self.master.configure(bg="#313131")
         self.master.attributes('-alpha', 0.9)
@@ -39,11 +46,21 @@ class Interface(object):
         self.master.bind("<space>", self.pause_unpause_button)
 
         self.button_images = {}
-
-        for image in listdir("images\\"):
-            self.button_images[image] = (PhotoImage(file=join("images\\", image)))
-
         self.db = db
+
+        self.current_song_index = 0  # saves the index of the current playing song
+        self.current_song_album = None  # saves the album in which the current playing song is in
+        self.paused = False  # saves the state of the song
+
+        self.music_time_passed = datetime.timedelta(minutes=00)      # these to variables are used for incrementing the
+        self.time_difference = datetime.timedelta(milliseconds=100)  # time_label showing how long it has been playing
+
+        try:
+            for image in listdir("images\\"):
+                self.button_images[image] = (PhotoImage(file=join("images\\", image)))
+        except TclError:
+            messagebox.showerror("Error loading Images", "An Error has occurred while loading images files.")
+            self.close()
 
         try:
             self.db["playlists"]
@@ -51,20 +68,13 @@ class Interface(object):
             self.db["playlist_names"] = []  # stores the order of the playlists
             self.db["playlists"] = {}  # stores all albums in a given playlist
             self.db["album_songs"] = {}  # stores all songs in a given album
-            self.db["volume_pct"] = 20
+            self.db["volume_value"] = 30
 
         self.style = ttk.Style()
         self.style.theme_use("clam")
         self.style.configure("Vertical.TScrollbar", width=14)
         self.style.configure("Horizontal.TScale", sliderlength=20)
         self.style.configure("Horizontal.TProgressbar", borderwidth=0, foreground="green", background="green")
-
-        self.current_song_index = 0
-        self.current_song_album = None
-        self.paused = False
-
-        self.music_time_passed = datetime.timedelta(minutes=00)
-        self.time_difference = datetime.timedelta(milliseconds=100)
 
         # Frames
         self.top_f = Frame(self.master, height=60, width=900, bg="#313131")
@@ -107,14 +117,13 @@ class Interface(object):
         self.column_frame.grid(column=1, row=0, sticky=W)
 
         # SCALE
-        self.scale_var = StringVar()
-        self.scale = ttk.Scale(self.bot_f, orient=HORIZONTAL, length=100, from_=0, to=100, variable=self.scale_var
+        self.scale = ttk.Scale(self.bot_f, orient=HORIZONTAL, length=100, from_=0, to=100, variable=self.db["volume_value"]
                                , command=self.volume_adjuster, style="Horizontal.TScale")
         self.scale.place(relx=0.9, rely=0.5, anchor=CENTER)
 
         # BUTTONS
 
-        self.logo = Button(self.top_f, image=self.button_images["shinux.png"], bg="#313131",
+        self.logo = Button(self.top_f, image=self.button_images["shinix.png"], bg="#313131",
                            activebackground="#313131", borderwidth=0)
         self.logo.place(relx=0.95, rely=0.5, anchor=CENTER)
         #
@@ -160,7 +169,7 @@ class Interface(object):
         self.display_playlist()
 
     # pauses or unpause songs
-    def pause_unpause_button(self, event):
+    def pause_unpause_button(self, event=None):
         try:
             if not self.paused:
                 mixer.music.pause()
@@ -217,7 +226,7 @@ class Interface(object):
             pass
 
         mixer.music.play()
-        mixer.music.set_volume(self.db["volume_pct"] / 100)
+        mixer.music.set_volume(self.db["volume_value"] / 100)
 
         audio = MP3(song_path)
         song_duration = round(float(audio.info.length))
@@ -226,10 +235,7 @@ class Interface(object):
         self.progressbar.start(1000)
 
         while mixer.music.get_busy():
-            if self.paused:
-                time.sleep(1)
-            else:
-                time.sleep(0.1)
+            if not self.paused:
                 self.time_passing()
         self.play_next_song()
 
@@ -238,6 +244,7 @@ class Interface(object):
         root = Toplevel(self.master)
         name = GetPlaylistName(root, self, "CREATE")
 
+    # initialises a PopUp window to ask the user for name to edit existing playlist
     def edit_name_window(self):
         root = Toplevel(self.master)
         name = GetPlaylistName(root, self, "EDIT")
@@ -250,6 +257,7 @@ class Interface(object):
         self.playlist.itemconfig("end", foreground="#dcdcdc")
         self.playlist.select_clear(0, "end")
 
+    # edits existing playlist's name
     def edit_name(self, old_name, new_name):
         old_name_index = self.db["playlist_names"].index(old_name)
         self.db["playlist_names"][old_name_index] = new_name
@@ -266,11 +274,11 @@ class Interface(object):
         self.playlist.delete(0, "end")
         self.display_playlist()
 
+    # removes an existing playlist
     def remove_playlist(self):
         selected_playlist = self.playlist.get("active")
         index = self.db["playlist_names"].index(selected_playlist)
 
-        print(selected_playlist)
         if messagebox.askyesno("Remove playlist", "Are you sure you want to delete this playlist"):
             self.db["playlist_names"].pop(index)
             del self.db["playlists"][selected_playlist]
@@ -316,17 +324,17 @@ class Interface(object):
     # displays all songs to interface
     def display_songs(self, playlist):
         self.songs.delete("all")
-
         x = 20
         y = 0
         for album in self.db["playlists"][playlist]:
             y += 40
-            self.songs.create_text(x, y, text=album.upper(), tags=[album], anchor=W, fill="#e85400")
-
+            self.songs.create_text(x, y, text=album.upper(), tags=[album], anchor=W, fill="#e85400", font=("", 11))
             for index, song in enumerate(self.db["album_songs"][album]):
                 y += 30
-                self.songs.create_text(x, y, text=song[0], tags=[song[2], index], anchor=W, fill="#dcdcdc")
-                self.songs.create_text(x + 450, y, text=song[1], tags=[song[2], index], anchor=W, fill="#dcdcdc")
+                self.songs.create_text(x, y, text=song[0], tags=[song[2], index], anchor=W, fill="#dcdcdc",
+                                       font=("", 10))
+                self.songs.create_text(x + 450, y, text=song[1], tags=[song[2], index], anchor=W, fill="#dcdcdc",
+                                       font=("", 10))
                 self.songs.create_line(x, y + 15, x + 500, y + 15, tags="line", fill="#dcdcdc")
 
         self.songs.configure(scrollregion=(0, 0, 0, y + 30))
@@ -336,27 +344,27 @@ class Interface(object):
         song_duration_in_mins = str(datetime.timedelta(minutes=song_duration))
         return song_duration_in_mins[0:4]
 
-# adjusts the volume of the songs
-    def volume_adjuster(self, event):
-        volume = round(float(self.scale_var.get()))
+    # adjusts the volume of the songs
+    def volume_adjuster(self, event=None):
+        volume = round(float(self.scale.get()))
 
         try:
             mixer.music.set_volume(volume / 100)
-            self.db["volume_pct"] = volume
+            self.db["volume_value"] = volume
         except error:
             pass
 
+    # increments the Music_time label to display the time the song has been playing for
     def time_passing(self):
-
         self.music_time_passed += self.time_difference
         str_var = str(self.music_time_passed)
         self.music_time_var.set(str_var[2:])
 
+    # saves files
     def save(self):
         self.db.sync()
         messagebox.showinfo("saved", "Save successful")
 
-# stops the songs when closing
     def close(self):
         try:
             mixer.music.stop()
