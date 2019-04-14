@@ -41,6 +41,7 @@ class Interface(object):
 
         self.current_song_index = 0  # saves the index of the current playing song
         self.current_song_album = None  # saves the album in which the current playing song is in
+        self.current_playlist = None
         self.paused = False  # saves the state of the song
 
         self.music_time_passed = datetime.timedelta(minutes=00)      # these to variables are used for incrementing the
@@ -163,19 +164,19 @@ class Interface(object):
 
     # initialises a second thread aside from the tkinter mainloop, which is going to play all music files
     def initialise_thread(self, song_path, song_index, current_album):
+        self.current_song_index = int(song_index)
+        self.current_song_album = current_album
+
         if threading.active_count() < 2:
-            t = threading.Thread(target=self.music_loop, args=[song_path, song_index, current_album])
+            t = threading.Thread(target=self.music_loop, args=[song_path])
             t.daemon = True
             t.start()
         else:
             self.play_song(song_path)
 
     # here the mixer object get's initialised the this function keeps the thread alive
-    def music_loop(self, song_path, song_index, current_album):
+    def music_loop(self, song_path):
         mixer.init()
-
-        self.current_song_index = int(song_index)
-        self.current_song_album = current_album
 
         self.play_song(song_path)
 
@@ -228,19 +229,26 @@ class Interface(object):
             pass
 
     def play_next_song(self, event=None):
+        self.current_song_index += 1
+
         try:
-            self.current_song_index += 1
             song_path = self.db["album_songs"][self.current_song_album][self.current_song_index][2]
             self.play_song(song_path)
-        except KeyError:
-            pass
+        except IndexError:
+            current_album_index = self.db["playlists"][self.current_playlist].index(self.current_song_album)
+            self.current_song_album = self.db["playlists"][self.current_playlist][current_album_index + 1]
+            self.current_song_index = 0
+
+            song_path = self.db["album_songs"][self.current_song_album][current_album_index][2]
+            self.play_song(song_path)
 
     def play_previous_song(self, event=None):
         self.current_song_index -= 1
+
         try:
             song_path = self.db["album_songs"][self.current_song_album][self.current_song_index][2]
             self.play_song(song_path)
-        except KeyError:
+        except IndexError:
             pass
 
     # initialises a PopUp window to ask for a name for the new playlist
@@ -327,6 +335,8 @@ class Interface(object):
 
     # displays all songs to interface
     def display_songs(self, playlist):
+        self.current_playlist = playlist
+
         self.songs.delete("all")
         x = 20
         y = 0
