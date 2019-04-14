@@ -241,7 +241,6 @@ class Interface(object):
 
         try:
             song_path = self.db["album_songs"][self.current_song_album][self.current_song_index][2]
-            print(self.songs.find_withtag(song_path))
             self.play_song(song_path)
         except IndexError:
             try:
@@ -293,7 +292,7 @@ class Interface(object):
         except SyntaxError:
             pass
 
-        self.db.sync()
+        self.db.sync()  # saves changes
 
         self.playlist.delete(0, "end")
         self.display_playlist()
