@@ -53,8 +53,6 @@ class Interface(object):
             messagebox.showerror("Error loading Images", "An Error has occurred while loading images files.")
             self.close()
 
-
-
         self.style = ttk.Style()
         self.style.theme_use("clam")
         self.style.configure("Vertical.TScrollbar", width=14)
