@@ -185,6 +185,8 @@ class Interface(object):
                 if not self.paused:
                     time.sleep(0.1)
                     self.time_passing()
+                else:
+                    time.sleep(0.1)
             else:
                 self.play_next_song()
 
