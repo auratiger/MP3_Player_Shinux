@@ -24,13 +24,6 @@ from Songs import Songs
 from Playlist import Playlist
 from NewPlaylist import GetPlaylistName
 
-# menu bar
-# color changing in menu bar
-# search entrybox
-# fix threads
-# rename playlists
-# save changes
-
 
 class Interface(object):
 
