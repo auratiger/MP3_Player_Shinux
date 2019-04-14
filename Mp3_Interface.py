@@ -153,6 +153,7 @@ class Interface(object):
         self.music_time.config(font=("Courier", 20))
         self.music_time.place(relx=0.12, rely=0.5, anchor=CENTER)
 
+        # checks if the save files exist and if so displays all playlists and songs
         try:
             if self.db["playlists"]:
                 self.display_playlist()
