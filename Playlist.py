@@ -1,5 +1,9 @@
-from tkinter import Listbox
-from tkinter.font import Font
+try:
+    from tkinter import Listbox
+    from tkinter.font import Font
+except ImportError:
+    from Tkinter import Listbox
+    from Tkinter.font import Font
 
 
 # IN THIS LIST BOX ARE GONNA BE INSERTED THE NAMES OF THE FILES OF THE DIRECTORY

@@ -1,11 +1,11 @@
 try:
     # for python 3
-    from tkinter import Button, StringVar, Frame, Toplevel, TclError,\
+    from tkinter import Button, StringVar, IntVar, Frame, Toplevel, TclError,\
                         ttk, messagebox, filedialog, PhotoImage, \
                         CENTER, W, LEFT, RIGHT, BOTTOM, VERTICAL, HORIZONTAL, Y
 except ImportError:
     # for python 2
-    from Tkinter import Button, StringVar, Frame, Toplevel, TclError,\
+    from Tkinter import Button, StringVar, IntVar, Frame, Toplevel, TclError,\
                         ttk, messagebox, filedialog, PhotoImage, \
                         CENTER, W, LEFT, RIGHT, BOTTOM, VERTICAL, HORIZONTAL, Y
 
@@ -14,9 +14,7 @@ from os.path import join, isdir
 
 from pygame import mixer, error
 
-import threading  # change to multiprocessing
-from multiprocessing import Process
-
+import threading
 from mutagen.mp3 import MP3
 
 import datetime
@@ -62,13 +60,7 @@ class Interface(object):
             messagebox.showerror("Error loading Images", "An Error has occurred while loading images files.")
             self.close()
 
-        try:
-            self.db["playlists"]
-        except KeyError:
-            self.db["playlist_names"] = []  # stores the order of the playlists
-            self.db["playlists"] = {}  # stores all albums in a given playlist
-            self.db["album_songs"] = {}  # stores all songs in a given album
-            self.db["volume_value"] = 30
+
 
         self.style = ttk.Style()
         self.style.theme_use("clam")
@@ -117,7 +109,8 @@ class Interface(object):
         self.column_frame.grid(column=1, row=0, sticky=W)
 
         # SCALE
-        self.scale = ttk.Scale(self.bot_f, orient=HORIZONTAL, length=100, from_=0, to=100, variable=self.db["volume_value"]
+        self.scale_volume = IntVar()
+        self.scale = ttk.Scale(self.bot_f, orient=HORIZONTAL, length=100, from_=0, to=100, variable=self.scale_volume
                                , command=self.volume_adjuster, style="Horizontal.TScale")
         self.scale.place(relx=0.9, rely=0.5, anchor=CENTER)
 
@@ -166,7 +159,16 @@ class Interface(object):
         self.music_time.config(font=("Courier", 20))
         self.music_time.place(relx=0.12, rely=0.5, anchor=CENTER)
 
-        self.display_playlist()
+        try:
+            if self.db["playlists"]:
+                self.display_playlist()
+                self.display_songs(self.playlist.get(0))
+                self.scale_volume.set(self.db["volume_value"])
+        except KeyError:
+            self.db["playlist_names"] = []  # stores the order of the playlists
+            self.db["playlists"] = {}  # stores all albums in a given playlist
+            self.db["album_songs"] = {}  # stores all songs in a given album
+            self.db["volume_value"] = 30
 
     # initialises a second thread aside from the tkinter mainloop, which is going to play all music files
     def initialise_thread(self, song_path, song_index, current_album):
@@ -186,10 +188,13 @@ class Interface(object):
 
         self.play_song(song_path)
 
-        while mixer.music.get_busy():
-            if not self.paused:
-                time.sleep(0.1)
-                self.time_passing()
+        while True:
+            if mixer.music.get_busy():
+                if not self.paused:
+                    time.sleep(0.1)
+                    self.time_passing()
+            else:
+                self.play_next_song()
 
     # this function changes loads the songs which get played in the music loop
     def play_song(self, song_path):

@@ -1,6 +1,7 @@
-from tkinter import Canvas
-from multiprocessing import Process
-import threading
+try:
+    from tkinter import Canvas
+except ImportError:
+    from Tkinter import Canvas
 
 
 # ALL SONG NAMES WILL BE INSERTED HERE

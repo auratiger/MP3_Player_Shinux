@@ -1,7 +1,10 @@
-from tkinter import Tk
+try:
+    from tkinter import Tk
+except ImportError:
+    from Tkinter import Tk
+
 from Mp3_Interface import Interface
 import shelve
-
 
 if __name__ == "__main__":
     root = Tk()
