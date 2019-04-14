@@ -235,12 +235,15 @@ class Interface(object):
             song_path = self.db["album_songs"][self.current_song_album][self.current_song_index][2]
             self.play_song(song_path)
         except IndexError:
-            current_album_index = self.db["playlists"][self.current_playlist].index(self.current_song_album)
-            self.current_song_album = self.db["playlists"][self.current_playlist][current_album_index + 1]
-            self.current_song_index = 0
+            try:
+                current_album_index = self.db["playlists"][self.current_playlist].index(self.current_song_album)
+                self.current_song_album = self.db["playlists"][self.current_playlist][current_album_index + 1]
+                self.current_song_index = 0
 
-            song_path = self.db["album_songs"][self.current_song_album][current_album_index][2]
-            self.play_song(song_path)
+                song_path = self.db["album_songs"][self.current_song_album][current_album_index][2]
+                self.play_song(song_path)
+            except IndexError:
+                pass
 
     def play_previous_song(self, event=None):
         self.current_song_index -= 1
