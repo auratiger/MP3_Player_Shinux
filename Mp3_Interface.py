@@ -31,6 +31,8 @@ class Interface(object):
         self.master = master
         self.master.title("Mp3 player Shinux")
         self.master.geometry("900x600+500+200")
+        self.master.minsize(width=900, height=600)
+        # self.master.maxsize(width=260, height=100)
         self.master.configure(bg="#313131")
         self.master.attributes('-alpha', 0.9)
         self.master.protocol("WM_DELETE_WINDOW", self.close)
@@ -207,6 +209,9 @@ class Interface(object):
         song_duration = round(float(audio.info.length))
         self.progressbar.configure(maximum=song_duration)
 
+        self.play_btn.configure(image=self.button_images["pause_btn.png"])
+        self.paused = False
+
         self.progressbar.stop()
         self.progress_var.set(0)
         self.progressbar.start(1000)
@@ -235,6 +240,7 @@ class Interface(object):
 
         try:
             song_path = self.db["album_songs"][self.current_song_album][self.current_song_index][2]
+            print(self.songs.find_withtag(song_path))
             self.play_song(song_path)
         except IndexError:
             try:
