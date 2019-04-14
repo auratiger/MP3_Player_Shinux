@@ -348,10 +348,13 @@ class Interface(object):
             self.songs.create_text(x, y, text=album.upper(), tags=[album], anchor=W, fill="#e85400", font=("", 11))
             for index, song in enumerate(self.db["album_songs"][album]):
                 y += 30
+                # displays song name
                 self.songs.create_text(x, y, text=song[0], tags=[song[2], index], anchor=W, fill="#dcdcdc",
                                        font=("", 10))
+                # displays song time
                 self.songs.create_text(x + 450, y, text=song[1], tags=[song[2], index], anchor=W, fill="#dcdcdc",
                                        font=("", 10))
+                # displays line separator
                 self.songs.create_line(x, y + 15, x + 500, y + 15, tags=["line", index], fill="#dcdcdc")
 
         self.songs.configure(scrollregion=(0, 0, 0, y + 30))
